@@ -19,7 +19,7 @@ int main(){
     string compAnimal;
     string userAnimal;
     int maxVal = 10;
-    int minVal = 1;
+    int minVal = 1; //shh i know
     
 //"Random" generation of an integer for later use to produce an animal
     srand (time(0));
@@ -35,19 +35,8 @@ int main(){
     //cout << "Max Attempts Password: " << maxAttemptsP << endl;
     //cout << "Max Attempts Animal: " << maxAttemptsA << endl;
 //generating "random" animal based off previous integer
-    /*if(randomValue == 1) {
-                compAnimal = "Cat";
-            } else if (randomValue == 2){
-                compAnimal = "Dog";
-            } else if (randomValue == 3){
-                compAnimal = "Rabbit";
-            } else if (randomValue == 4){
-                compAnimal = "Mouse";
-            } else if (randomValue == 5){
-                compAnimal = "Horse";
-            }*/
     const string animals[] = {"Cat", "Dog", "Rabbit", "Mouse", "Horse", "Cow", "Sheep", "Pig", "Owl", "Chicken"};
-    compAnimal = animals[randomValue - 1];
+    compAnimal = animals[randomValue - 1]; // i know i know, this was my first "real" program ;)
 //first gate, generic password checker, with max attempts
     while(password != passwordUser && maxAttemptsP != 0){
         cout << "Enter Your Password: ";
@@ -56,7 +45,7 @@ int main(){
         if(password != passwordUser){
             maxAttemptsP--;
             cout << "Authentication Failed. Attempts remaining: " << maxAttemptsP << endl;
-//if access granted, next gate prompts user with 3 animals and their personal key animal        
+//if access granted, next gate prompts user with an animal which is their their personal key animal        
         } else {
             while (userAnimal != compAnimal && maxAttemptsA != 0)
             {
@@ -77,6 +66,6 @@ int main(){
             }
         
         }
-//should not normally output 0, unless critical error in system
+//should not normally return 0, unless critical error in system
         return 0;
 }
