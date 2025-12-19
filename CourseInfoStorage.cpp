@@ -96,7 +96,7 @@ int main() {
     for(int i = 0; i < courseMaterial.size(); i++) { //adds up all the grades into totalGPA variable
         totalGPA += courseMaterial[i].courseGrade;
     }
-    if(!courseMaterial.empty()) { //checks if empty, devides by size
+    if(!courseMaterial.empty()) { //checks if empty, divides by size
             totalGPA /= courseMaterial.size();
         }
     //cout << courseMaterial.size(); //debugging, i had a lot of problems with the parsing 
