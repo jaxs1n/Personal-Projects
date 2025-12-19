@@ -80,7 +80,7 @@ int main() {
                 }
                 if(line.find("Course Grade: ") != string::npos) {
                     grade = stof(line.substr(line.find(":") + 2)); //must use stof for floats/integers. Read as string, must convert to float/integer stof does that
-                    courseMaterial.emplace_back(name, professor, ta, grade); //vectors information automatically formats into object
+                    courseMaterial.emplace_back(name, professor, ta, grade); //constructs a CourseInformation object directly inside the vector
                 }
             }
             break;
