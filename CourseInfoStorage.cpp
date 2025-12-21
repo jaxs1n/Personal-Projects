@@ -5,6 +5,7 @@
  * Utilizes: File IO, OOP, and basic arithmetic operators
  * Ends with calculating total GPA, and regardless of input method
  * stores GPA in user file
+ * camelCase
  * @author Jackson Virtue
  */
 #include <iostream>
