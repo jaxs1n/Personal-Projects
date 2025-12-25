@@ -85,7 +85,7 @@ RentalService GetGuestInfo() {
     return RentalService(age, weight, Lname, Fname);
 }
 
-void CustomerTotalCost() { //Most dangerous function I've wrote so far, and its somehow one of the simplist...
+void CustomerTotalCost() {
     ifstream rentalsPrices("RentalsPrices.txt");
     string line, userAnswer;
     float subTotal = 0.0;
