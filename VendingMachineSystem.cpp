@@ -99,7 +99,6 @@ class Customer {
 class VendingMachine {
     private:
         float vendingMachineCashContent = 0.0;
-        float refundCredit = 0.0;
         // Tally
             std::vector<Coin> coinTally;
             std::vector<PaperCash> cashTally;
@@ -146,7 +145,6 @@ class VendingMachine {
             totalVendingMachineCredit();
             return vendingMachineCashContent;
         }
-        float getRefundCredit() const {return refundCredit;}
         MachineState getMachineCurrState() const {return state;}
         Coin getUserCoins() const {return userCoin;}
         PaperCash getUserCash() const {return userCash;}
@@ -240,7 +238,7 @@ class VendingMachine {
         VendingItems DispenseItem(VendingItems userItem) {
             std::string ERROR;
             if(state == MachineState::Dispensing || state == MachineState::Refunding) {
-                ERROR = "Please_Wait";
+                ERROR = "PLEASE_WAIT";
                 std::cout << ERROR;
                 return VendingItems::ITEMNULL;
             }
@@ -270,28 +268,24 @@ class VendingMachine {
         void RefundingCredit() {
             MachineState tempstate = state;
             state = MachineState::Refunding;
-                for(const auto& cash: cashTally) {
-                    auto credit = convertCashToI.find(cash);
-                    refundCredit += credit->second;
-                }
-                for(const auto& coin: coinTally) {
-                    auto credit = convertCoinToF.find(coin);
-                    refundCredit += credit->second;
-                }
+            
+            std::cout << "REFUNDED: $" << vendingMachineCashContent << "\n";
+            vendingMachineCashContent = 0.0;
+
             state = tempstate;
         }
 
         void Servicing() {
             std::random_device rd;
             std::mt19937 gen(rd());
-            std::uniform_int_distribution<int> distrib(1, 10000);
+            std::uniform_int_distribution<int> distrib(100000, 999999);
             
             int serviceCode = distrib(gen);
             std::cout << serviceCode << "\n";
 
             if(serviceCode == tech.ServiceRequest()) {
                 state = MachineState::ShutDown;
-                std::cout << "Available_To_Service" << "\n";
+                std::cout << "AVAILABLE_TO_SERVICE" << "\n";
             }
         }
 };
@@ -361,7 +355,7 @@ int main() {
                         Machine1.addCustomerInputCash();
                     }
                     else {
-                        std::cout << "Enter Legal Tender.\n";
+                        std::cout << "ENTER_LEGAL_TENDER\n";
                     }
                 }
                 float totalMoney = Machine1.getTotalCashContent();
@@ -374,7 +368,7 @@ int main() {
             }
             case 3: {
                 float totalMoney = Machine1.getTotalCashContent();
-                std::cout << totalMoney << "\n";
+                std::cout << "TOTAL_CREDIT: $" << totalMoney << "\n";
                 break;
             }
             case 4: {
@@ -386,15 +380,13 @@ int main() {
                 if(userItem != itemName.end()) {
                     VendingItems item = Machine1.DispenseItem(userItem ->second);
                     auto itemAdress = reverseItemName.find(item);
-                    std::cout << "Dispensed: " << itemAdress->second << "\n";
+                    std::cout << "DISPENSED: " << itemAdress->second << "\n";
                     // std::cout << item;
                     }
                 break;
             }
             case 5: {
                 Machine1.RefundingCredit(); // When making the dispensing, I somehow broke this...
-                float refundCredit = Machine1.getRefundCredit();
-                std::cout << "REFUNDED_CREDIT:$" << refundCredit << "\n";
                 break;
             }
             case 6: {
