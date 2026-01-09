@@ -2,10 +2,16 @@
  * This is a vending machine back end
  * Learned more OOS & Classes, Enumeration classes, Mapping
  * I really need to use headerfiles...
- * Incomplete, sometimes eats your money lowkey but im lazy
+ * Incomplete, still eats your money lowkey and doesn't give you candy - after 1/9/26 IT DOES!
+ * (its my buisness plan -> 100% Profit Margin)
  * This is a boring program but was very fun to learn
+ * yes its overcomplicated, yes it can be streamlined, yes im lazy.
+ * In my defence more lines of code = better code... ;)
  * camelCase/PascalCase and honestly kinda whatever i felt like in the moment this time
+ * Enjoy my overcomplicated Vending Machine UI! if anyone sees this please give feedback!
+ * last edited - 1/9/26
  */
+
 #include <iostream>
 #include <string>
 #include <vector>
@@ -31,7 +37,8 @@ enum class VendingItems {
     BeefJerky,
     Cola,
     GingerAle,
-    GummyCandy
+    GummyCandy,
+    ITEMNULL
 };
 
 enum class Coin {
@@ -73,7 +80,7 @@ class VendingMachineTechnician {
             }
         }
 
-        ServiceRequest() {
+        int ServiceRequest() {
             int serviceRequest;
 
             std::cin >> serviceRequest;
@@ -86,18 +93,23 @@ class Customer {
         const AccessLevel level = AccessLevel::User;
 
     public:
+        AccessLevel getAccessLevel() const {return level;}
 };
 
 class VendingMachine {
     private:
         float vendingMachineCashContent = 0.0;
+        float refundCredit = 0.0;
+        // Tally
+            std::vector<Coin> coinTally;
+            std::vector<PaperCash> cashTally;
+            std::vector<VendingItems> itemsTally;
         MachineState state = MachineState::Idle;
         TransactionResult result;
         const AccessLevel level = AccessLevel::VendingMachine;
         VendingMachineTechnician tech;
-        PaperCash userPaperCash;
+        PaperCash userCash;
         Coin userCoin;
-        Customer user;
 
         std::map<MachineState, std::string> stateLookup = {
             {MachineState::Idle, "Idle"},
@@ -106,18 +118,38 @@ class VendingMachine {
             {MachineState::ShutDown, "Shutdown"}
         };
 
+        std::map<Coin, float> convertCoinToF = {
+            {Coin::Quarter, .25},
+            {Coin::FiftyCents, .5},
+            {Coin::DollarCoin, 1.0}
+        };
+
+        std::map<PaperCash, int> convertCashToI = {
+            {PaperCash::Dollar, 1},
+            {PaperCash::TwoDollar, 2},
+            {PaperCash::FiveDollar, 5},
+            {PaperCash::TenDollar, 10},
+            {PaperCash::TwentyDollar, 20},
+            {PaperCash::FiftyDollar, 50},
+            {PaperCash::HundredDollar, 100}
+        };
+
     public:
         void InputMoneyCoin(Coin userCoin) {
             this->userCoin = userCoin;
         }
         void InputMoneyCash(PaperCash userCash) {
-            this->userPaperCash = userCash;
+            this->userCash = userCash;
         }
 
-        float getTotalCashContent() const {return vendingMachineCashContent;}
+        float getTotalCashContent() {
+            totalVendingMachineCredit();
+            return vendingMachineCashContent;
+        }
+        float getRefundCredit() const {return refundCredit;}
         MachineState getMachineCurrState() const {return state;}
         Coin getUserCoins() const {return userCoin;}
-        PaperCash getUserCash() const {return userPaperCash;}
+        PaperCash getUserCash() const {return userCash;}
 
         void setMachineStateFunction() {
             std::string techAnswer;
@@ -136,16 +168,29 @@ class VendingMachine {
             }
         }
 
+        void totalVendingMachineCredit() {
+            for(const auto coin: coinTally) {
+                auto credit = convertCoinToF.find(coin);
+                vendingMachineCashContent += credit->second;
+                coinTally.pop_back();
+            }
+            for(const auto cash: cashTally) {
+                auto credit = convertCashToI.find(cash);
+                vendingMachineCashContent += credit->second;
+                cashTally.pop_back();
+            }
+        }
+
         void addCustomerInputCoin() {
             if(state == MachineState::Idle) {
                 if(userCoin == Coin::Quarter) {
-                    vendingMachineCashContent += .25;
+                    coinTally.push_back(Coin::Quarter);
                 }
                 else if(userCoin == Coin::FiftyCents) {
-                    vendingMachineCashContent += .5;
+                    coinTally.push_back(Coin::FiftyCents);
                 } 
                 else if(userCoin == Coin::DollarCoin) {
-                    vendingMachineCashContent += 1;
+                    coinTally.push_back(Coin::DollarCoin);
                 }
             } else {
                 std::cout << "ERROR:VENDING";
@@ -156,77 +201,84 @@ class VendingMachine {
         void addCustomerInputCash() {
             if(state == MachineState::ShutDown || state == MachineState::Dispensing || state == MachineState::Refunding) {
                 std::cout << "ERROR:SHUT_DOWN_";
-                RefundingCash();
+                RefundingCredit();
             }
-            else if(userPaperCash == PaperCash::Dollar) {
-                vendingMachineCashContent += 1;
+            else if(userCash == PaperCash::Dollar) {
+                cashTally.push_back(PaperCash::Dollar);
             }
-            else if(userPaperCash == PaperCash::TwoDollar) {
-                vendingMachineCashContent += 2;
+            else if(userCash == PaperCash::TwoDollar) {
+                cashTally.push_back(PaperCash::TwoDollar);
             }
-            else if(userPaperCash == PaperCash::FiveDollar) {
-                vendingMachineCashContent += 5;
+            else if(userCash == PaperCash::FiveDollar) {
+                cashTally.push_back(PaperCash::FiveDollar);
             }
-            else if(userPaperCash == PaperCash::TenDollar) {
-                vendingMachineCashContent += 10;
+            else if(userCash == PaperCash::TenDollar) {
+                cashTally.push_back(PaperCash::TenDollar);
             }
-            else if(userPaperCash == PaperCash::TwentyDollar) {
-                vendingMachineCashContent += 20;
+            else if(userCash == PaperCash::TwentyDollar) {
+                cashTally.push_back(PaperCash::TwentyDollar);
             } 
-            else if(userPaperCash == PaperCash::FiftyDollar) {
-                vendingMachineCashContent += 50;
+            else if(userCash == PaperCash::FiftyDollar) {
+                cashTally.push_back(PaperCash::FiftyDollar);
             } 
-            else if(userPaperCash == PaperCash::HundredDollar) {
-                vendingMachineCashContent += 100;   
+            else if(userCash == PaperCash::HundredDollar) {
+                cashTally.push_back(PaperCash::HundredDollar);   
             }
         }
 
-        std::string DispenseItem() {
-            return "";
+        void InitializeVendingItems() {
+            for(int i = 0; i < 10; i++) {
+                itemsTally.push_back(VendingItems::BeefJerky);
+                itemsTally.push_back(VendingItems::CandyBar);
+                itemsTally.push_back(VendingItems::Cola);
+                itemsTally.push_back(VendingItems::GummyCandy);
+                itemsTally.push_back(VendingItems::GingerAle);
+                itemsTally.push_back(VendingItems::Lolipop);
+            }
         }
 
-        void RefundingCash() {
+        VendingItems DispenseItem(VendingItems userItem) {
+            std::string ERROR;
+            if(state == MachineState::Dispensing || state == MachineState::Refunding) {
+                ERROR = "Please_Wait";
+                std::cout << ERROR;
+                return VendingItems::ITEMNULL;
+            }
+            else if(state == MachineState::ShutDown) {
+                ERROR = "MACHINE_UNOPERATIONAL_CONTACT_ASSISTANCE";
+                std::cout << ERROR;
+                return VendingItems::ITEMNULL;
+            }
+            else if(vendingMachineCashContent >= 1) {
+                for (auto it = itemsTally.begin(); it != itemsTally.end(); ++it) {
+                    if (*it == userItem) {
+                        itemsTally.erase(it);
+                        vendingMachineCashContent--;
+                        return userItem;
+                    }
+                }
+                return VendingItems::ITEMNULL;
+            }
+            else {
+                std::cout << "NOT_ENOUGH_CREDIT";
+                return VendingItems::ITEMNULL;
+            }
+            userItem = VendingItems::ITEMNULL; // Should NOT reach this point normally...
+            return userItem;
+        }
+
+        void RefundingCredit() {
             MachineState tempstate = state;
             state = MachineState::Refunding;
-            int refundAmount = 0;
-                if(userPaperCash == PaperCash::Dollar) {
-                    refundAmount += 1;
+                for(const auto& cash: cashTally) {
+                    auto credit = convertCashToI.find(cash);
+                    refundCredit += credit->second;
                 }
-                else if(userPaperCash  == PaperCash::TwoDollar) {
-                    refundAmount += 2;
+                for(const auto& coin: coinTally) {
+                    auto credit = convertCoinToF.find(coin);
+                    refundCredit += credit->second;
                 }
-                else if(userPaperCash == PaperCash::FiveDollar) {
-                    refundAmount += 5;
-                }
-                else if(userPaperCash == PaperCash::TenDollar) {
-                    refundAmount += 10;
-                }
-                else if(userPaperCash == PaperCash::TwentyDollar) {
-                    refundAmount += 20;
-                } 
-                else if(userPaperCash == PaperCash::FiftyDollar) {
-                    refundAmount += 50;
-                } 
-                else if(userPaperCash == PaperCash::HundredDollar) {
-                    refundAmount += 100;
-                }
-            std::cout << "AMT_DUE: $" << refundAmount << "\n";
             state = tempstate;
-        }
-        float RefundingCoins(Coin customerInputCoin) {
-            state = MachineState::Refunding;
-            float refundAmount;
-
-            if(customerInputCoin == Coin::Quarter) {
-                refundAmount += .25;
-            }
-            else if(customerInputCoin == Coin::FiftyCents) {
-                refundAmount += .5;
-            } 
-            else if(customerInputCoin == Coin::DollarCoin) {
-                refundAmount += 1;
-            }
-            return refundAmount;
         }
 
         void Servicing() {
@@ -252,6 +304,8 @@ int main() {
     int userAnswer;
     int customerInputCash;
 
+    Machine1.InitializeVendingItems(); // Going to add function where only a vending machine tech can add, but for now,
+                                       // to change amount of contents: change the i variable in this function
     std::map<std::string, PaperCash> cashName = {
         {"1", PaperCash::Dollar},
         {"2", PaperCash::TwoDollar},
@@ -277,8 +331,17 @@ int main() {
         {"Lolipop", VendingItems::Lolipop}
     };
 
+    std::map<VendingItems, std::string> reverseItemName = {
+        {VendingItems::CandyBar, "CandyBar"},
+        {VendingItems::Cola, "Cola"},
+        {VendingItems::BeefJerky,  "BeefJerky"},
+        {VendingItems::GingerAle, "GingerAle"},
+        {VendingItems::GummyCandy, "GummyCandy"},
+        {VendingItems::Lolipop, "Lolipop"}
+    };
+
     while (true) {
-    std::cout << "Add Money (1) | Service (2) | View Cash (3) | Select Item (4) | Exit (0)\n";
+    std::cout << "Add Money (1) | Service (2) | View Cash (3) | Select Item (4) | Refund (5) | Display Available Item (6) | Exit (0)\n";
     std::cin >> userAnswer;
 
         switch (userAnswer) {
@@ -315,16 +378,30 @@ int main() {
                 break;
             }
             case 4: {
-                std::cout << "Enter Item: ";
+                std::cout << "Candy Bar - 1$ | Cola - 1$ | Beef Jerky - 1$ | Ginger Ale - 1$ | Gummy Candy - 1$ | Lolipop - 1$\n";
+                std::cout << "Enter Item: "; // still need to make a payment method, should't be hard
                 std::cin >> userItemRequest;
 
                 auto userItem = itemName.find(userItemRequest);
                 if(userItem != itemName.end()) {
-                    std::string item = Machine1.DispenseItem();
-                    std::cout << item;
+                    VendingItems item = Machine1.DispenseItem(userItem ->second);
+                    auto itemAdress = reverseItemName.find(item);
+                    std::cout << "Dispensed: " << itemAdress->second << "\n";
+                    // std::cout << item;
                     }
+                break;
             }
             case 5: {
+                Machine1.RefundingCredit(); // When making the dispensing, I somehow broke this...
+                float refundCredit = Machine1.getRefundCredit();
+                std::cout << "REFUNDED_CREDIT:$" << refundCredit << "\n";
+                break;
+            }
+            case 6: {
+                 std::cout << "Candy Bar - 1$ | Cola - 1$ | Beef Jerky - 1$ | Ginger Ale - 1$ | Gummy Candy - 1$ | Lolipop - 1$\n";
+                 break;
+            }
+            case 7: {
                 Machine1.setMachineStateFunction();
                 break;
             }
