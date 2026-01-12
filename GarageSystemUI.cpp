@@ -64,20 +64,23 @@ class Ticket { // Gets challanged by PaymentProcessor, Owns a timeStamp
             ticketState = TicketState::Paid;
         }
         void addDay() {
+            //std::cout << "Made it here";
             timeStampDays++;
         }
 };
 
 class Vehicle { // Owns userMoney, an AccessLevel which is constant, and a VehicleType, Can respond to PaymentProcessor, or Employee
     private:
-        const AccessLevel accessLevel = AccessLevel::Customer;
+        AccessLevel accessLevel = AccessLevel::Customer;
         VehicleType vehicleType;
-        Ticket ticket;
-        std::string licensePlate = "000-000";
+        Ticket& ticket;
+        std::string licensePlate = "UNDFMEMBER";
+        int ticketNumber = 0;
 
     public:
         std::string getLicensePlate() const {return licensePlate;}
         VehicleType getVehicleType() const {return vehicleType;}
+        Ticket getVehicleTicket() const {return ticket;}
 
         void initializeVehicle() {
             std::string vechicleType;
@@ -90,21 +93,25 @@ class Vehicle { // Owns userMoney, an AccessLevel which is constant, and a Vehic
             std::cout << "Enter License Plate: ";
             std::cin >> licensePlate;
         }
-        void addTicket(Ticket newTicket) {
-            ticket = newTicket;
-        }
         void payTicket() {
             const int dayPrice = 12;
             int amountDue = ticket.getTimeStampDays() * dayPrice;
-            std::cout << amountDue << "\n";
+            std::cout << "Amount Due: $" << amountDue << "\n";
             ticket.paidTicket();
+        }
+        void increaseDaysAttended() {
+            std::cout << "Made it here\n";
+            ticket.addDay();
+        }
+        void attachTicket(Ticket ticket) {
+            this->ticket = ticket;
+            ticket.timeStampTicket();
         }
 };
 
 class PaymentProcessor { // Challenges a Vehicle, and a Ticket, Owns a ticket
     private:
         Vehicle visitingVehicle;
-        Ticket currentTicket;
         std::vector<Vehicle> vehicleHistory;
 
         std::map<VehicleType, std::string> vehicleOutMap {
@@ -116,8 +123,7 @@ class PaymentProcessor { // Challenges a Vehicle, and a Ticket, Owns a ticket
     public:
         Vehicle ticketVehicle() {
             visitingVehicle.initializeVehicle();
-            currentTicket.timeStampTicket();
-            visitingVehicle.addTicket(currentTicket);
+            addTicket();
 
             return visitingVehicle;
         }
@@ -126,6 +132,11 @@ class PaymentProcessor { // Challenges a Vehicle, and a Ticket, Owns a ticket
         }
         void VehicleHistory(Vehicle paidVehicle) {
             vehicleHistory.push_back(paidVehicle);
+        }
+        void addTicket() {
+            Ticket newTicket;
+            newTicket.timeStampTicket();
+            visitingVehicle.attachTicket(newTicket);
         }
         void searchHistory() {
             for(const auto& paidVehicle: vehicleHistory) {
@@ -141,36 +152,37 @@ class ParkingGarage { // Can Challange Payment Processor, or Vehicle. Challanged
         std::vector<Vehicle> vehiclePopulationForSearch;
         double inputCapacity;
         double liveCapacity = 0.0;
+        int currentDay = 0;
 
     public:
         void checkPopulation() {
             if(liveCapacity >= inputCapacity) {
-                std::cout << "Current Population: 50 We are Full\n";
+                std::cout << "Sorry, We are Full\n";
             }
             std::cout << "Current Population: " << vehiclePopulationForSearch.size() << "\n";
         }
         void addToVehiclePopulation() {
             if(state == GarageState::Closed || state == GarageState::Full || state == GarageState::Maintenance) {
-                std::cout << "No space at this time";
+                std::cout << "Sorry, We are unable to service you at this moment\n";
                 return;
             }
             else {
                 Vehicle tempVehicle = Processor1.ticketVehicle();
                 if(tempVehicle.getVehicleType() == VehicleType::Car && liveCapacity++ > inputCapacity) {
-                    std::cout << "No space at this time";
+                    std::cout << "Sorry, We are Full\n";
                     return;
                 }
                 else if(tempVehicle.getVehicleType() == VehicleType::Truck && liveCapacity + 2 > inputCapacity) {
-                    std::cout << "No space at this time";
+                    std::cout << "Sorry, We are Full\n";
                     return;
                 }
                 else if(tempVehicle.getVehicleType() == VehicleType::CompactVehicle && liveCapacity + 0.5 > inputCapacity){
-                    std::cout << "No space at this time";
+                    std::cout << "Sorry, We are Full\n";
                     return;
                 }
                 Processor1.VehicleHistory(tempVehicle);
                 vehiclePopulationForSearch.push_back(tempVehicle);
-                std::cout << vehiclePopulationForSearch.size() << "\n"; // Debugging
+                std::cout << liveCapacity << "\n"; // Debugging
 
                 if(tempVehicle.getVehicleType() == VehicleType::Car) {
                     liveCapacity++;
@@ -178,7 +190,7 @@ class ParkingGarage { // Can Challange Payment Processor, or Vehicle. Challanged
                 else if(tempVehicle.getVehicleType() == VehicleType::Truck) {
                     liveCapacity += 2;
                 }
-                else {
+                else if(tempVehicle.getVehicleType() == VehicleType::CompactVehicle) {
                     liveCapacity += .5;
                 }
             }
@@ -190,18 +202,18 @@ class ParkingGarage { // Can Challange Payment Processor, or Vehicle. Challanged
             std::string licenseTarget;
             std::cout << "Enter License Plate: ";
             std::cin >> licenseTarget;
-            
-            for(const auto& vehicle: vehiclePopulationForSearch) {
-                if(vehicle.getLicensePlate() == licenseTarget) {
-                    Processor1.challangeVehicle();
-                    Vehicle paidVehicle = vehicle;
-                    Processor1.VehicleHistory(paidVehicle);
 
-                } 
-                else {
-                    std::cout << "No Matching Plate Found";
+            for (auto it = vehiclePopulationForSearch.begin(); it != vehiclePopulationForSearch.end(); ++it) {
+                if (it->getLicensePlate() == licenseTarget) {
+                    // std::cout << "Found Plate\n";
+                    Processor1.challangeVehicle();
+                    Processor1.VehicleHistory(*it);
+                    vehiclePopulationForSearch.erase(it);
+
+                    return;
                 }
-            } 
+            }
+            std::cout << "No Matching Plate Found\n";
         }
         void closeParkingGarage() {
             state = GarageState::Closed;
@@ -215,9 +227,14 @@ class ParkingGarage { // Can Challange Payment Processor, or Vehicle. Challanged
         void fullParkingGarage() {
             state = GarageState::Full;
         }
+        void addDay() {
+            for(auto& vehicle: vehiclePopulationForSearch) {
+                vehicle.increaseDaysAttended();
+            }
+        }
 };
 
-class Employee { // Can challange any class depending on access level, still deciding what an Employee might own
+class EmployeeClass { // Can challange any class depending on access level, still deciding what an Employee might own
     private:
         AccessLevel accessLevel;
         ParkingGarage& assignedParkingGarage;
@@ -268,37 +285,60 @@ class Employee { // Can challange any class depending on access level, still dec
 
             assignedParkingGarage.InputCapactity(desiredCapactiy);
         }
+        void manuallyAddDay() {
+            assignedParkingGarage.addDay();
+        }
+        EmployeeClass(ParkingGarage& garage) : assignedParkingGarage(garage) { // Initializes the Employee
+            determineAccessLevel();
+            setParkingGarageState();
+            changeGarageCapacity();
+        }
 };
 
 int main() {
     int userChocie;
     int userAnswer;
     ParkingGarage Garage1;
-    Employee Employee1;
+    EmployeeClass Jackson(Garage1);
 
     while(true) {
         std::cout << "Normal Operations (1) | Employee Operations (2)\n";
         std::cin >> userChocie;
         switch(userChocie) {
             case 1: {
-                Garage1.checkPopulation();
-                Garage1.addToVehiclePopulation();
-                Garage1.carExit();
+                std::cout << "Enter (1) | Pay & Exit (2)\n";
+                std::cin >> userAnswer;
+                switch(userAnswer) {
+                    case 1: {
+                        Garage1.checkPopulation();
+                        Garage1.addToVehiclePopulation();
+                        break;
+                    }
+                    case 2: {
+                        Garage1.carExit();
+                        break;
+                    }
+                    default: {
+                        break;
+                    }
+                }
                 break;
             }
             case 2: {
-                Employee1.determineAccessLevel();
-
-                std::cout << "Change Garage Capacity (1) | Set Garage State (2)\n";
+                std::cout << "Change Garage Capacity (1) | Set Garage State (2) | Add Day (3)\n";
                 std::cin >> userAnswer;
 
                 switch(userAnswer) {
                     case 1: {
-                        Employee1.changeGarageCapacity();
+                        Jackson.changeGarageCapacity();
                         break;
                     }
                     case 2: {
-                        Employee1.setParkingGarageState();
+                        Jackson.setParkingGarageState();
+                        break;
+                    }
+                    case 3: {
+                        Jackson.manuallyAddDay();
                         break;
                     }
                     default: {
